@@ -1,0 +1,73 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    margin: 0;
+    padding: 0;
+}
+.container {
+    max-width: 600px;
+    margin: 40px auto;
+    background: #fff;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+h1, h2 {
+    text-align: center;
+}
+form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+form input, form select, form button {
+    flex: 1 1 120px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+form button {
+    background: #007bff;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+form button:hover {
+    background: #0056b3;
+}
+.error {
+    color: #d8000c;
+    background: #ffd2d2;
+    padding: 8px;
+    border-radius: 4px;
+    margin-bottom: 12px;
+    display: none;
+}
+#expense-list {
+    list-style: none;
+    padding: 0;
+}
+#expense-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+#expense-list li:last-child {
+    border-bottom: none;
+}
+.delete-btn {
+    background: #dc3545;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+.delete-btn:hover {
+    background: #a71d2a;
+}
