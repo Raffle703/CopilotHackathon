@@ -6,6 +6,7 @@
     <title>Expense Tracker</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 </head>
 <body>
     <div class="container">
@@ -15,8 +16,22 @@
             <select id="category" required></select>
             <input type="date" id="date" required>
             <input type="text" id="description" placeholder="Description" required>
+            <input type="text" id="tags" placeholder="Tags (comma separated)">
+            <input type="text" id="receipt-note" placeholder="Receipt Note / Number">
+            <label style="display:inline-block;margin:5px 0;">
+                <input type="checkbox" id="recurring"> Recurring Monthly
+            </label>
             <button type="submit" id="submit-btn">Add Expense</button>
         </form>
+        <div id="budget-section" style="margin:20px 0;">
+            <h2>Set Monthly Budgets</h2>
+            <form id="budget-form" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                <select id="budget-category"></select>
+                <input type="number" id="budget-limit" placeholder="Limit" min="0.01" step="0.01" required>
+                <button type="submit">Set Budget</button>
+            </form>
+            <ul id="budget-list"></ul>
+        </div>
         <div id="error" class="error"></div>
         <div class="filters">
             <input type="date" id="filter-start" placeholder="Start date">
@@ -30,7 +45,10 @@
         <ul id="expense-list"></ul>
         <h2>Total This Month: $<span id="total-month">0.00</span></h2>
         <h2>Category Breakdown</h2>
-        <canvas id="breakdown-chart" width="400" height="200"></canvas>
+        <div style="display:flex;flex-direction:column;gap:20px;align-items:flex-start;">
+            <canvas id="breakdown-chart" width="300" height="150"></canvas>
+            <canvas id="bar-chart" width="300" height="150"></canvas>
+        </div>
     </div>
     <script src="app.js"></script>
 </body>

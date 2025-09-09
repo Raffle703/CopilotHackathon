@@ -1,5 +1,7 @@
 // Mock data for initial UI testing
+
 const CATEGORIES = ["Food", "Transport", "Entertainment", "Shopping", "Bills"];
+let budgets = {}; // { category: limit }
 
 let expenses = [
     { id: 1, amount: 12.5, category: "Food", date: "2025-09-09", description: "Lunch" },
@@ -13,19 +15,24 @@ let filterStart = '';
 let filterEnd = '';
 let searchDesc = '';
 
+
 function renderCategories() {
     const select = document.getElementById('category');
+    const budgetSelect = document.getElementById('budget-category');
     select.innerHTML = '';
+    budgetSelect.innerHTML = '';
     CATEGORIES.forEach(cat => {
         const opt = document.createElement('option');
         opt.value = cat;
         opt.textContent = cat;
-        select.appendChild(opt);
+        select.appendChild(opt.cloneNode(true));
+        budgetSelect.appendChild(opt);
     });
 }
 
 let editMode = false;
 let editId = null;
+
 
 function renderExpenses() {
     const list = document.getElementById('expense-list');
@@ -41,9 +48,14 @@ function renderExpenses() {
         filtered = filtered.filter(e => e.description.toLowerCase().includes(searchDesc.toLowerCase()));
     }
     filtered.forEach(exp => {
+        const tags = exp.tags && exp.tags.length ? `<span class='tags'>[${exp.tags.join(', ')}]</span>` : '';
+        const note = exp.receipt_note ? `<span class='note'>Note: ${exp.receipt_note}</span>` : '';
+        const recurring = exp.recurring ? `<span class='recurring' title='Recurring Monthly'>🔁</span>` : '';
+        const warning = checkBudgetWarning(exp) ? `<span class='warning'>⚠️ Over budget!</span>` : '';
+        const info = `$${exp.amount.toFixed(2)} - ${exp.category} - ${exp.date} - ${exp.description}`;
         const li = document.createElement('li');
         li.innerHTML = `
-            <span class="expense-info">$${exp.amount.toFixed(2)} - ${exp.category} - ${exp.date} - ${exp.description}</span>
+            <span class="expense-info">${info} ${tags} ${note} ${recurring} ${warning}</span>
             <span class="expense-actions">
                 <button class="edit-btn" onclick="startEditExpense(${exp.id})">Edit</button>
                 <button class="delete-btn" onclick="deleteExpense(${exp.id})">Delete</button>
@@ -84,22 +96,76 @@ function renderBreakdown(filteredList) {
     list.forEach(e => {
         breakdown[e.category] += e.amount;
     });
-    const ctx = document.getElementById('breakdown-chart').getContext('2d');
+    // Pie chart (smaller)
+    const ctxPie = document.getElementById('breakdown-chart').getContext('2d');
     if (window.breakdownChart) window.breakdownChart.destroy();
-    window.breakdownChart = new Chart(ctx, {
+    window.breakdownChart = new Chart(ctxPie, {
+        type: 'pie',
+        data: {
+            labels: CATEGORIES,
+            datasets: [{
+                label: 'Spending by Category',
+                data: CATEGORIES.map(cat => breakdown[cat]),
+                backgroundColor: [
+                    '#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8',
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            plugins: {
+                legend: { display: true, position: 'bottom' },
+                tooltip: { enabled: true },
+                datalabels: {
+                    color: '#222',
+                    font: { weight: 'bold', size: 14 },
+                    formatter: (value, context) => {
+                        const dataArr = context.chart.data.datasets[0].data;
+                        const total = dataArr.reduce((a, b) => a + b, 0);
+                        if (!total) return '';
+                        const percent = value / total * 100;
+                        return percent > 0 ? percent.toFixed(1) + '%' : '';
+                    },
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+
+    // Bar chart
+    const ctxBar = document.getElementById('bar-chart').getContext('2d');
+    if (window.barChart) window.barChart.destroy();
+    window.barChart = new Chart(ctxBar, {
         type: 'bar',
         data: {
             labels: CATEGORIES,
             datasets: [{
                 label: 'Spending by Category',
                 data: CATEGORIES.map(cat => breakdown[cat]),
-                backgroundColor: '#007bff',
+                backgroundColor: [
+                    '#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8',
+                ],
+                borderWidth: 1
             }]
         },
         options: {
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true } }
-        }
+            indexAxis: 'y',
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: true },
+                datalabels: {
+                    color: '#222',
+                    font: { weight: 'bold', size: 14 },
+                    anchor: 'end',
+                    align: 'end',
+                    formatter: (value) => value > 0 ? value.toFixed(2) : '',
+                }
+            },
+            scales: {
+                x: { beginAtZero: true }
+            }
+        },
+        plugins: [ChartDataLabels]
     });
 }
 // Filtering and search handlers
@@ -148,12 +214,16 @@ function showError(msg) {
     setTimeout(() => err.style.display = 'none', 2500);
 }
 
+
 document.getElementById('expense-form').addEventListener('submit', function(e) {
     e.preventDefault();
     const amount = parseFloat(document.getElementById('amount').value);
     const category = document.getElementById('category').value;
     const date = document.getElementById('date').value;
     const description = document.getElementById('description').value.trim();
+    const tags = document.getElementById('tags').value.split(',').map(t => t.trim()).filter(Boolean);
+    const receipt_note = document.getElementById('receipt-note').value.trim();
+    const recurring = document.getElementById('recurring').checked;
     if (isNaN(amount) || amount <= 0) {
         showError('Amount must be positive.');
         return;
@@ -166,7 +236,7 @@ document.getElementById('expense-form').addEventListener('submit', function(e) {
         // Update existing expense
         const idx = expenses.findIndex(e => e.id === editId);
         if (idx !== -1) {
-            expenses[idx] = { ...expenses[idx], amount, category, date, description };
+            expenses[idx] = { ...expenses[idx], amount, category, date, description, tags, receipt_note, recurring };
         }
         editMode = false;
         editId = null;
@@ -175,7 +245,7 @@ document.getElementById('expense-form').addEventListener('submit', function(e) {
         // Add new expense
         const newExpense = {
             id: expenses.length ? Math.max(...expenses.map(e => e.id)) + 1 : 1,
-            amount, category, date, description
+            amount, category, date, description, tags, receipt_note, recurring
         };
         expenses.push(newExpense);
     }
@@ -184,6 +254,7 @@ document.getElementById('expense-form').addEventListener('submit', function(e) {
     document.getElementById('date').value = new Date().toISOString().slice(0,10);
 });
 
+
 function startEditExpense(id) {
     const exp = expenses.find(e => e.id === id);
     if (!exp) return;
@@ -191,9 +262,48 @@ function startEditExpense(id) {
     document.getElementById('category').value = exp.category;
     document.getElementById('date').value = exp.date;
     document.getElementById('description').value = exp.description;
+    document.getElementById('tags').value = exp.tags ? exp.tags.join(', ') : '';
+    document.getElementById('receipt-note').value = exp.receipt_note || '';
+    document.getElementById('recurring').checked = !!exp.recurring;
     editMode = true;
     editId = id;
     document.getElementById('submit-btn').textContent = 'Update Expense';
+}
+// Budget logic
+function renderBudgets() {
+    const list = document.getElementById('budget-list');
+    list.innerHTML = '';
+    Object.entries(budgets).forEach(([cat, limit]) => {
+        const li = document.createElement('li');
+        li.textContent = `${cat}: $${parseFloat(limit).toFixed(2)}`;
+        list.appendChild(li);
+    });
+}
+
+document.getElementById('budget-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const cat = document.getElementById('budget-category').value;
+    const limit = parseFloat(document.getElementById('budget-limit').value);
+    if (!cat || isNaN(limit) || limit <= 0) {
+        showError('Budget limit must be positive.');
+        return;
+    }
+    budgets[cat] = limit;
+    renderBudgets();
+    this.reset();
+});
+
+function checkBudgetWarning(exp) {
+    if (!budgets[exp.category]) return false;
+    // Calculate total for this category for this month
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const year = now.getFullYear();
+    const catTotal = expenses.filter(e => {
+        const d = new Date(e.date);
+        return e.category === exp.category && d.getMonth() + 1 === month && d.getFullYear() === year;
+    }).reduce((sum, e) => sum + e.amount, 0);
+    return catTotal > budgets[exp.category];
 }
 
 function deleteExpense(id) {
@@ -209,3 +319,4 @@ function setDefaultDate() {
 renderCategories();
 setDefaultDate();
 renderExpenses();
+renderBudgets();
