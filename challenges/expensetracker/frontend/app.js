@@ -43,9 +43,11 @@ function renderExpenses() {
     filtered.forEach(exp => {
         const li = document.createElement('li');
         li.innerHTML = `
-            <span>$${exp.amount.toFixed(2)} - ${exp.category} - ${exp.date} - ${exp.description}</span>
-            <button class="edit-btn" onclick="startEditExpense(${exp.id})">Edit</button>
-            <button class="delete-btn" onclick="deleteExpense(${exp.id})">Delete</button>
+            <span class="expense-info">$${exp.amount.toFixed(2)} - ${exp.category} - ${exp.date} - ${exp.description}</span>
+            <span class="expense-actions">
+                <button class="edit-btn" onclick="startEditExpense(${exp.id})">Edit</button>
+                <button class="delete-btn" onclick="deleteExpense(${exp.id})">Delete</button>
+            </span>
         `;
         list.appendChild(li);
     });
