@@ -1,3 +1,23 @@
+ .filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+#filter-btn, #clear-filter-btn, #export-csv-btn {
+    background: #28a745;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 0.95em;
+    transition: background 0.2s;
+}
+#filter-btn:hover, #clear-filter-btn:hover, #export-csv-btn:hover {
+    background: #218838;
+}
 body {
     font-family: Arial, sans-serif;
     background: #f4f4f4;

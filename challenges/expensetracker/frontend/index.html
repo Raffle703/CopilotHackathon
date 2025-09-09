@@ -15,9 +15,17 @@
             <select id="category" required></select>
             <input type="date" id="date" required>
             <input type="text" id="description" placeholder="Description" required>
-            <button type="submit">Add Expense</button>
+            <button type="submit" id="submit-btn">Add Expense</button>
         </form>
         <div id="error" class="error"></div>
+        <div class="filters">
+            <input type="date" id="filter-start" placeholder="Start date">
+            <input type="date" id="filter-end" placeholder="End date">
+            <input type="text" id="search-desc" placeholder="Search description">
+            <button id="filter-btn" type="button">Filter</button>
+            <button id="clear-filter-btn" type="button">Clear</button>
+            <button id="export-csv-btn" type="button">Export CSV</button>
+        </div>
         <h2>All Expenses</h2>
         <ul id="expense-list"></ul>
         <h2>Total This Month: $<span id="total-month">0.00</span></h2>
